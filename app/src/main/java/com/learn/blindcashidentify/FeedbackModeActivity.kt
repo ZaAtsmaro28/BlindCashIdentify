@@ -46,7 +46,6 @@ fun FeedbackModeScreen() {
         modifier = Modifier
             .fillMaxSize()
             .semantics {
-                // Ini membantu TalkBack mengenali ini sebagai tampilan utama
                 contentDescription = "Halaman pemilihan mode umpan balik"
             },
         color = MaterialTheme.colorScheme.background

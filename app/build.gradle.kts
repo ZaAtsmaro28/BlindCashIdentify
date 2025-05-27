@@ -16,6 +16,17 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        ndk {
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a")
+        }
+    }
+
+    packagingOptions {
+        pickFirst("lib/arm64-v8a/libtensorflowlite_jni.so")
+        pickFirst("lib/armeabi-v7a/libtensorflowlite_jni.so")
+        pickFirst("lib/arm64-v8a/libtensorflowlite_task_vision_jni.so")
+        pickFirst("lib/armeabi-v7a/libtensorflowlite_task_vision_jni.so")
     }
 
     buildTypes {
@@ -52,8 +63,8 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.activity)
-    implementation(libs.litert)
-    implementation(libs.litert.support.api)
+//    implementation(libs.litert)
+//    implementation(libs.litert.support.api)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -68,4 +79,8 @@ dependencies {
     implementation(libs.androidx.camera.video)
     implementation(libs.androidx.camera.view)
     implementation(libs.androidx.camera.extensions)
+
+    implementation(libs.tensorflow.lite.task.vision)
+    implementation(libs.tensorflow.lite.support)
+
 }
