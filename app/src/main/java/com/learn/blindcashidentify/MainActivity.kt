@@ -2,6 +2,7 @@ package com.learn.blindcashidentify
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -48,9 +49,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             BlindCashIdentifyTheme {
                 cameraScreen()
+//                CameraCaptureScreen()
             }
         }
-
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -62,14 +63,17 @@ class MainActivity : ComponentActivity() {
         ) {
             val scaffoldState = rememberBottomSheetScaffoldState()
             var result by remember { mutableStateOf("Menunggu hasil...") }
+            var croppedBitmap by remember { mutableStateOf<Bitmap?>(null) }
+
 
             val controller = remember {
                 LifecycleCameraController(applicationContext).apply {
                     setEnabledUseCases(CameraController.IMAGE_ANALYSIS)
                     setImageAnalysisAnalyzer(
                         ContextCompat.getMainExecutor(this@MainActivity),
-                        MoneyAnalyzer(applicationContext) {
-                            result = it
+                        MoneyAnalyzer(applicationContext) { bitmap, label ->
+                            result = label
+                            croppedBitmap = bitmap
                         }
                     )
                 }
@@ -85,7 +89,6 @@ class MainActivity : ComponentActivity() {
                     controller = controller,
                     modifier = Modifier.fillMaxSize()
                 )
-
                 // Hasil deteksi
                 Box(
                     modifier = Modifier
@@ -102,8 +105,6 @@ class MainActivity : ComponentActivity() {
                     )
                 }
             }
-
-
             AutoFlashlightOn(controller)
         }
     }

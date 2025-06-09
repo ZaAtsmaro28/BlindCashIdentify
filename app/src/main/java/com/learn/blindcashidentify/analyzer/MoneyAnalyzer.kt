@@ -5,11 +5,12 @@ import android.content.Context
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import android.graphics.Bitmap
+import android.util.Log
 
 
 class MoneyAnalyzer(
     private val context: Context,
-    private val onResult: (String) -> Unit
+    private val onResult: (Bitmap?, String) -> Unit
 ) : ImageAnalysis.Analyzer {
 
     private val validator = MoneyValidator(context)
@@ -17,23 +18,23 @@ class MoneyAnalyzer(
     private val detector = MoneyDetection(context)
 
     override fun analyze(imageProxy: ImageProxy) {
+        Log.d("COBA", "TEST")
         val bitmap = imageProxy.toBitmap()
-
+        Log.d("COBA", "TEST1")
         // Deteksi bounding box uang
-        val boundingBox = detector.detectMoney(bitmap)
-
-        if (boundingBox != null) {
-            val cropped = cropBitmap(bitmap, boundingBox)
-
-            val input = validator.bitmapToByteBuffer(cropped)
+//        val boundingBox = detector.detectMoney(bitmap)
+        Log.d("COBA", "TEST2")
+//        if (boundingBox != null) {
+//            val cropped = cropBitmap(bitmap, boundingBox)
+            val input = validator.bitmapToByteBuffer(bitmap)
             val resultValidation = validator.validateMoney(input)
             val resultNominal = classifier.classifyMoney(input)
 
-            onResult("Keaslian: $resultValidation\nNominal: $resultNominal")
-        } else {
-            onResult("Uang tidak terdeteksi.")
-        }
-
+            onResult(bitmap, "Keaslian: $resultValidation\nNominal: $resultNominal")
+//        } else {
+//            onResult(null, "Uang tidak terdeteksi.")
+//        }
+        Log.d("COBA", "TEST3")
         imageProxy.close()
     }
 

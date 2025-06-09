@@ -9,7 +9,7 @@ class MoneyClassifier(context: Context) {
     private val interpreter: Interpreter
 
     init {
-        val assetFileDescriptor = context.assets.openFd("nominal_model.tflite")
+        val assetFileDescriptor = context.assets.openFd("money_classifier.tflite")
         val fileInputStream = assetFileDescriptor.createInputStream()
         val modelByteBuffer = fileInputStream.channel.map(
             java.nio.channels.FileChannel.MapMode.READ_ONLY,

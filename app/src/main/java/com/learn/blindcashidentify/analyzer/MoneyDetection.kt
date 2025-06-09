@@ -3,6 +3,7 @@ package com.learn.blindcashidentify.analyzer
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.RectF
+import android.util.Log
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.support.common.ops.NormalizeOp
 import org.tensorflow.lite.support.image.ImageProcessor
@@ -12,19 +13,25 @@ import org.tensorflow.lite.task.vision.detector.Detection
 
 class MoneyDetection(context: Context) {
 
-    private val detector: ObjectDetector
+    private lateinit var detector: ObjectDetector
 
     init {
-        val options = ObjectDetector.ObjectDetectorOptions.builder()
-            .setMaxResults(1) // fokus pada satu objek uang saja
-            .setScoreThreshold(0.5f) // confidence minimum
-            .build()
+        try {
+            val options = ObjectDetector.ObjectDetectorOptions.builder()
+                .setMaxResults(1) // fokus pada satu objek uang saja
+                .setScoreThreshold(0.5f) // confidence minimum
+                .build()
 
-        detector = ObjectDetector.createFromFileAndOptions(
-            context,
-            "money_detection_model.tflite",
-            options
-        )
+            detector = ObjectDetector.createFromFileAndOptions(
+                context,
+                "money_detection_model_with_metadata.tflite",
+                options
+            )
+            Log.d("deteksi", "berhasil")
+        } catch (e:Exception){
+            Log.d("deteksi", e.stackTraceToString())
+        }
+
     }
 
     fun detectMoney(bitmap: Bitmap): RectF? {
