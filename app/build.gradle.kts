@@ -64,8 +64,6 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
-//    implementation(libs.litert)
-//    implementation(libs.litert.support.api)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -83,5 +81,15 @@ dependencies {
 
     implementation(libs.tensorflow.lite.task.vision)
     implementation(libs.tensorflow.lite.support)
+
+    implementation(libs.retrofit)
+    implementation(libs.retrofit2.converter.gson)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.runtime.ktx.v261)
+    implementation(libs.okhttp)
+
+    implementation(libs.coil.compose)
+
+    implementation (libs.converter.scalars)
 
 }

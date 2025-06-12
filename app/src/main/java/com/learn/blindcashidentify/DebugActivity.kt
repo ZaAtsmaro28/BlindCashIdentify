@@ -1,56 +1,107 @@
 package com.learn.blindcashidentify
 
+import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.RectF
 import android.os.Bundle
 import android.util.Log
+import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityManager
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.launch
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.learn.blindcashidentify.analyzer.MoneyDetection
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import com.learn.blindcashidentify.viewmodel.PredictViewModel
+import java.io.File
+import java.io.FileOutputStream
 
 class DebugActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            DebugScreen()
+            DebugScreen() // composable call
         }
     }
 }
 
+fun announceForAccessibility(context: Context, message: String) {
+    val accessibilityManager =
+        context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
+    if (accessibilityManager.isEnabled) {
+        accessibilityManager.interrupt()
+        accessibilityManager.sendAccessibilityEvent(
+            AccessibilityEvent.obtain().apply {
+                eventType = AccessibilityEvent.TYPE_ANNOUNCEMENT
+                className = context.javaClass.name
+                packageName = context.packageName
+                text.add(message)
+            }
+        )
+    }
+}
+
+
+//def composable func
 @Composable
 fun DebugScreen() {
+    val predictViewModel: PredictViewModel = viewModel()
+    val result = predictViewModel.result
+
     val context = LocalContext.current
-    val moneyDetector = remember { MoneyDetection(context) }
 
-    var originalBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var croppedBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var boundingBox by remember { mutableStateOf<RectF?>(null) }
+    var bitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var imageFile by remember { mutableStateOf<File?>(null) }
 
-    val cameraLauncher = rememberLauncherForActivityResult(
+    // Deteksi perubahan hasil dan umumkan dengan TalkBack
+    LaunchedEffect(result) {
+        result?.let {
+            val nominal = it.top
+//            val confidence = "%.2f".format(it.confidence)
+            val message = "Hasil Deteksi. Nominal $nominal."
+            announceForAccessibility(context, message)
+        }
+    }
+
+
+    val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
-    ) { bitmap ->
-        if (bitmap != null) {
-            originalBitmap = bitmap
-            val resultBox = moneyDetector.detectMoney(bitmap)
-            boundingBox = resultBox
-            if (resultBox != null) {
-                croppedBitmap = cropBitmap(bitmap, resultBox)
-                Log.d("DebugCompose", "Deteksi uang: $resultBox")
-            } else {
-                croppedBitmap = null
-                Log.d("DebugCompose", "Tidak ada uang terdeteksi.")
+    ) { bmp: Bitmap? ->
+        bitmap = bmp
+        bmp?.let {
+            imageFile = saveBitmapToCache(context.cacheDir, it)
+
+            if (imageFile != null){
+                predictViewModel.predict(imageFile!!)
             }
         }
     }
@@ -58,58 +109,88 @@ fun DebugScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color.Black)
             .padding(16.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Button(onClick = { cameraLauncher.launch() }) {
-            Text("Ambil Gambar")
+        Button(
+            onClick = { launcher.launch() },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(60.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Yellow,
+                contentColor = Color.Black
+            ),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Text(
+                text = "Ambil Gambar",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        croppedBitmap?.let {
-            Text("Hasil Deteksi (Cropped):")
-            Spacer(modifier = Modifier.height(8.dp))
-            Image(
-                bitmap = it.asImageBitmap(),
-                contentDescription = "Gambar Uang Terdeteksi",
+        bitmap?.let {
+            AsyncImage(
+                model = it,
+                contentDescription = "Hasil",
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp)
+                    .size(220.dp)
+                    .border(2.dp, Color.White, RoundedCornerShape(8.dp))
             )
-        } ?: originalBitmap?.let {
-            Text("Gambar Asli:")
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        result?.let {
+//            Log.d("cobacoba", it.toString())
+            Text(
+                text = "Hasil Deteksi:",
+                fontSize = 40.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Yellow
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = "Nominal: ${formatWithUnderscore(it.top.toInt())}",
+                fontSize = 40.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Yellow
+            )
             Spacer(modifier = Modifier.height(8.dp))
-            Image(
-                bitmap = it.asImageBitmap(),
-                contentDescription = "Gambar Asli",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp)
-            )
+//            Text(
+//                text = "Confidence: ${"%.2f".format(it.confidence)}",
+//                fontSize = 33.sp,
+//                color = Color.Yellow
+//            )
         }
 
         Spacer(modifier = Modifier.height(8.dp))
-
-        boundingBox?.let {
-            Text("Bounding Box: (${it.left.toInt()}, ${it.top.toInt()}, ${it.right.toInt()}, ${it.bottom.toInt()})")
-        }
     }
 }
 
-private fun cropBitmap(source: Bitmap, boundingBox: RectF): Bitmap {
-    val left = boundingBox.left.toInt().coerceAtLeast(0)
-    val top = boundingBox.top.toInt().coerceAtLeast(0)
-    val right = boundingBox.right.toInt().coerceAtMost(source.width)
-    val bottom = boundingBox.bottom.toInt().coerceAtMost(source.height)
 
-    val width = right - left
-    val height = bottom - top
-
-    return if (width > 0 && height > 0) {
-        Bitmap.createBitmap(source, left, top, width, height)
-    } else {
-        source
+fun saveBitmapToCache(cacheDir: File, bitmap: Bitmap): File? {
+    return try {
+        val file = File(cacheDir, "preview_${System.currentTimeMillis()}.png")
+        FileOutputStream(file).use { out ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+        }
+        file
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
     }
+}
+
+fun formatWithUnderscore(number: Int): String {
+    return number.toString()
+        .reversed()
+        .chunked(3)
+        .joinToString("_")
+        .reversed()
 }
