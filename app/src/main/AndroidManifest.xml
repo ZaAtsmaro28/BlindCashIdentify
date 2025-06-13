@@ -32,9 +32,7 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <activity
-            android:name=".FeedbackModeActivity"
-            android:exported="false" />
+
         <activity
             android:name=".DebugActivity"
             android:exported="true"

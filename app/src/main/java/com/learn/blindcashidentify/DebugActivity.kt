@@ -3,10 +3,8 @@ package com.learn.blindcashidentify
 import android.content.Context
 import android.graphics.Bitmap
 import android.os.Bundle
-import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityManager
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -49,7 +47,7 @@ class DebugActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            DebugScreen() // composable call
+            DebugScreen()
         }
     }
 }
@@ -70,28 +68,21 @@ fun announceForAccessibility(context: Context, message: String) {
     }
 }
 
-
-//def composable func
 @Composable
 fun DebugScreen() {
     val predictViewModel: PredictViewModel = viewModel()
     val result = predictViewModel.result
-
     val context = LocalContext.current
-
     var bitmap by remember { mutableStateOf<Bitmap?>(null) }
     var imageFile by remember { mutableStateOf<File?>(null) }
 
-    // Deteksi perubahan hasil dan umumkan dengan TalkBack
     LaunchedEffect(result) {
         result?.let {
             val nominal = it.top
-//            val confidence = "%.2f".format(it.confidence)
             val message = "Hasil Deteksi. Nominal $nominal."
             announceForAccessibility(context, message)
         }
     }
-
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
@@ -147,7 +138,6 @@ fun DebugScreen() {
         Spacer(modifier = Modifier.height(24.dp))
 
         result?.let {
-//            Log.d("cobacoba", it.toString())
             Text(
                 text = "Hasil Deteksi:",
                 fontSize = 40.sp,
@@ -162,11 +152,6 @@ fun DebugScreen() {
                 color = Color.Yellow
             )
             Spacer(modifier = Modifier.height(8.dp))
-//            Text(
-//                text = "Confidence: ${"%.2f".format(it.confidence)}",
-//                fontSize = 33.sp,
-//                color = Color.Yellow
-//            )
         }
 
         Spacer(modifier = Modifier.height(8.dp))

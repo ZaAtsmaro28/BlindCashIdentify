@@ -12,8 +12,8 @@ import okhttp3.Request
 import okhttp3.RequestBody
 import java.io.File
 
-class PredictRepository {
-    suspend fun detect(imageFile: File): PredictResult? = withContext(Dispatchers.IO) {
+open class PredictRepository {
+    open suspend fun detect(imageFile: File): PredictResult? = withContext(Dispatchers.IO) {
         val apiKey = "6KJJSxKAv8Uj88jlamCi"
         val projectId = "deteksi_nominal-b844n"
         val version = "3"
@@ -47,7 +47,6 @@ class PredictRepository {
                 Log.d("gambar", "Response: $responseBody")
 
                 responseBody?.let {
-                    // Parsing hanya bagian top, confidence, dan predictions
                     val gson = Gson()
                     return@withContext gson.fromJson(it, PredictResult::class.java)
                 } ?: run {
